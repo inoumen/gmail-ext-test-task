@@ -71,6 +71,6 @@ npm run build
 Distributed under the MIT License. See `LICENSE` for more information.
 
 ## Contact
-Your Name - ih.kubrak@gmail.com
+ih.kubrak@gmail.com
 
 Project Link: [https://github.com/inoumen/gmail-ext-test-task](https://github.com/inoumen/gmail-ext-test-task)
