@@ -1,0 +1,50 @@
+{
+    "manifest_version": 3,
+    "name": "Voice Email Composer",
+    "version": "0.0.1",
+    "description": "Compose emails using voice input directly in Gmail",
+    "permissions": [
+      "activeTab",
+      "storage",
+      "tabs",
+      "https://mail.google.com/*",
+      "https://inbox.google.com/*"
+    ],
+    "host_permissions": [
+      "https://mail.google.com/*",
+      "https://inbox.google.com/*"
+    ],
+    "optional_permissions": [
+      "microphone"
+    ],
+    "action": {
+      "default_popup": "index.html",
+      "default_icon": {
+        "16": "favicon-16x16.png"
+      }
+    },
+    "icons": {
+      "16": "favicon-16x16.png"
+    },
+    "background": {
+      "service_worker": "background.js"
+    },
+    "content_scripts": [
+      {
+        "matches": [
+          "https://mail.google.com/*",
+          "https://inbox.google.com/*"
+        ],
+        "js": ["content.js"]
+      }
+    ],
+    "web_accessible_resources": [
+      {
+        "resources": ["index.html"],
+        "matches": [
+          "https://mail.google.com/*",
+          "https://inbox.google.com/*"
+        ]
+      }
+    ]
+}
