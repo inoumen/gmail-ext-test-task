@@ -1,6 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { createRoot } from 'react-dom/client'
-import { Button, Paper, TextField, Typography, IconButton } from '@mui/material'
+import { 
+  Button, 
+  Paper, 
+  TextField, 
+  Typography, 
+  IconButton, 
+} from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close'
 import nlp from 'compromise'
 import { pipeline } from '@xenova/transformers'
@@ -10,6 +16,7 @@ const App = () => {
   const [isRecording, setIsRecording] = useState(false)
   const [properNouns, setProperNouns] = useState([])
   const [error, setError] = useState(null)
+  const [isProcessing, setIsProcessing] = useState(false)
   
   const mediaRecorderRef = useRef(null)
   const audioChunksRef = useRef([])
@@ -47,6 +54,11 @@ const App = () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
         
         try {
+          // Set processing state
+          setIsProcessing(true)
+          setProperNouns([])
+          setError(null)
+
           // Convert blob to base64
           const reader = new FileReader()
           reader.readAsDataURL(audioBlob)
@@ -56,8 +68,14 @@ const App = () => {
                 throw new Error('Whisper model not loaded')
               }
 
-              // Transcribe audio
-              const result = await whisperPipelineRef.current(reader.result)
+              // Transcribe audio with automatic chunking
+              const result = await whisperPipelineRef.current(reader.result, {
+                chunk_length_s: 30,
+                stride_length_s: 5,
+                return_timestamps: true,
+              })
+              
+              // Combine text from all chunks
               const transcribedText = result.text || ''
               
               // Update text and parse proper nouns
@@ -66,11 +84,15 @@ const App = () => {
             } catch (transcribeErr) {
               console.error('Transcription error:', transcribeErr)
               setError('Failed to transcribe audio')
+            } finally {
+              // Reset processing state
+              setIsProcessing(false)
             }
           }
         } catch (err) {
           console.error('Audio processing error:', err)
           setError('Audio processing failed')
+          setIsProcessing(false)
         }
       }
 
@@ -153,11 +175,20 @@ const App = () => {
 
       <div style={{ display: 'flex', gap: '10px', margin: '15px 0' }}>
         {!isRecording ? (
-          <Button variant="contained" color="success" onClick={startRecording}>
+          <Button 
+            variant="contained" 
+            color="success" 
+            onClick={startRecording}
+            loading={isProcessing}
+          >
             Start Recording
           </Button>
         ) : (
-          <Button variant="contained" color="error" onClick={stopRecording}>
+          <Button 
+            variant="contained" 
+            color="error" 
+            onClick={stopRecording}
+          >
             Stop Recording
           </Button>
         )}
@@ -173,7 +204,11 @@ const App = () => {
       />
 
       <div style={{ marginTop: '15px', display: 'flex', justifyContent: 'flex-end' }}>
-        <Button variant="outlined" onClick={copyToClipboard}>
+        <Button 
+          variant="outlined" 
+          onClick={copyToClipboard}
+          disabled={isProcessing}
+        >
           Copy
         </Button>
       </div>
