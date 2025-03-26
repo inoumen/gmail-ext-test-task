@@ -42,9 +42,15 @@ npm run build
 5. Click "Load unpacked"
 6. Select the `dist` folder
 
-## Features
-- Voice-to-text email composition
-- Easy-to-use voice commands
+## How to Use
+
+1. Pin the extension to your browser's extensions panel
+2. Click on the extension icon and enable the Overlay
+3. Open Gmail in your browser
+4. Click the "New email" button — you'll see a menu that lets you record your voice
+5. Record your message, then click "Stop Recording" and wait a moment for the text to be processed
+6. Voilà! You can now copy the transcribed text and use it in your email
+
 
 ## Troubleshooting
 - Ensure microphone permissions are granted
