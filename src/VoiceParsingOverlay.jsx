@@ -1,9 +1,11 @@
 import React, { useState, useRef } from 'react'
 import { createRoot } from 'react-dom/client'
-import { Button, Paper, TextField, Typography } from '@mui/material'
+import { Button, Paper, TextField, Typography, IconButton } from '@mui/material'
+import CloseIcon from '@mui/icons-material/Close'
 
 const App = () => {
-  const [text, setText] = useState('')
+  const [finalText, setFinalText] = useState('')
+  const [interimText, setInterimText] = useState('')
   const [isRecording, setIsRecording] = useState(false)
   const recognitionRef = useRef(null)
 
@@ -22,17 +24,23 @@ const App = () => {
 
     recognition.onresult = (event) => {
       let interim = ''
-      let final = ''
+      let newFinal = ''
 
       for (let i = event.resultIndex; i < event.results.length; ++i) {
+        const transcript = event.results[i][0].transcript
         if (event.results[i].isFinal) {
-          final += event.results[i][0].transcript
+          newFinal += transcript
         } else {
-          interim += event.results[i][0].transcript
+          interim += transcript
         }
       }
 
-      setText(final || interim)
+      if (newFinal) {
+        setFinalText(prev => prev + newFinal)
+        setInterimText('')
+      } else {
+        setInterimText(interim)
+      }
     }
 
     recognition.onerror = (e) => {
@@ -66,9 +74,24 @@ const App = () => {
   }
 
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(text).then(() => {
+    navigator.clipboard.writeText(finalText + interimText).then(() => {
       console.log('Copied to clipboard')
     })
+  }
+
+  const handleManualChange = (e) => {
+    setFinalText(e.target.value)
+  }
+
+  const closeOverlay = () => {
+    const el = document.getElementById('voice-email-react-root')
+    if (el) el.remove()
+
+    try {
+      recognitionRef.current?.stop()
+    } catch (err) {
+      console.error('Recognition stop on close failed:', err)
+    }
   }
 
   return (
@@ -79,13 +102,17 @@ const App = () => {
       transform: 'translateX(-50%)',
       padding: '20px',
       zIndex: 999999,
-      width: '400px'
+      width: '400px',
+      boxSizing: 'border-box',
     }}>
-      <Typography variant="h6" gutterBottom>
-        Voice Email Composer
-      </Typography>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Typography variant="h6">Voice Email Composer</Typography>
+        <IconButton onClick={closeOverlay}>
+          <CloseIcon />
+        </IconButton>
+      </div>
 
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+      <div style={{ display: 'flex', gap: '10px', margin: '15px 0' }}>
         {!isRecording ? (
           <Button variant="contained" color="success" onClick={startRecording}>
             Start Recording
@@ -101,17 +128,14 @@ const App = () => {
         multiline
         fullWidth
         minRows={5}
-        value={text}
-        onChange={e => setText(e.target.value)}
+        value={finalText + interimText}
+        onChange={handleManualChange}
         placeholder="Speak something..."
       />
 
-      <div style={{ marginTop: '10px', display: 'flex', justifyContent: 'space-between' }}>
+      <div style={{ marginTop: '15px', display: 'flex', justifyContent: 'flex-end' }}>
         <Button variant="outlined" onClick={copyToClipboard}>
           Copy
-        </Button>
-        <Button variant="outlined" onClick={() => console.log('Insert into email')}>
-          Insert
         </Button>
       </div>
     </Paper>
