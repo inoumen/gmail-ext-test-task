@@ -1,97 +1,130 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Button, Paper, TextField, Typography, IconButton } from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close'
+import nlp from 'compromise'
+import { pipeline } from '@xenova/transformers'
 
 const App = () => {
-  const [finalText, setFinalText] = useState('')
-  const [interimText, setInterimText] = useState('')
+  const [text, setText] = useState('')
   const [isRecording, setIsRecording] = useState(false)
-  const recognitionRef = useRef(null)
+  const [properNouns, setProperNouns] = useState([])
+  const [error, setError] = useState(null)
+  
+  const mediaRecorderRef = useRef(null)
+  const audioChunksRef = useRef([])
+  const whisperPipelineRef = useRef(null)
 
-  const initializeRecognition = () => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-
-    if (!SpeechRecognition) {
-      alert('Speech recognition not supported in this browser.')
-      return null
+  // Load Whisper model
+  useEffect(() => {
+    const loadWhisperModel = async () => {
+      try {
+        whisperPipelineRef.current = await pipeline(
+          'automatic-speech-recognition', 
+          'Xenova/whisper-tiny.en'
+        )
+      } catch (err) {
+        console.error('Failed to load Whisper model:', err)
+        setError('Could not load speech recognition model')
+      }
     }
+    loadWhisperModel()
+  }, [])
 
-    const recognition = new SpeechRecognition()
-    recognition.continuous = true
-    recognition.interimResults = true
-    recognition.lang = 'en-US'
+  // Start recording
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mediaRecorder = new MediaRecorder(stream)
+      mediaRecorderRef.current = mediaRecorder
+      audioChunksRef.current = []
 
-    recognition.onresult = (event) => {
-      let interim = ''
-      let newFinal = ''
+      mediaRecorder.ondataavailable = (e) => {
+        audioChunksRef.current.push(e.data)
+      }
 
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
-        const transcript = event.results[i][0].transcript
-        if (event.results[i].isFinal) {
-          newFinal += transcript
-        } else {
-          interim += transcript
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
+        
+        try {
+          // Convert blob to base64
+          const reader = new FileReader()
+          reader.readAsDataURL(audioBlob)
+          reader.onloadend = async () => {
+            try {
+              if (!whisperPipelineRef.current) {
+                throw new Error('Whisper model not loaded')
+              }
+
+              // Transcribe audio
+              const result = await whisperPipelineRef.current(reader.result)
+              const transcribedText = result.text || ''
+              
+              // Update text and parse proper nouns
+              setText(transcribedText)
+              parseProperNouns(transcribedText)
+            } catch (transcribeErr) {
+              console.error('Transcription error:', transcribeErr)
+              setError('Failed to transcribe audio')
+            }
+          }
+        } catch (err) {
+          console.error('Audio processing error:', err)
+          setError('Audio processing failed')
         }
       }
 
-      if (newFinal) {
-        setFinalText(prev => prev + newFinal)
-        setInterimText('')
-      } else {
-        setInterimText(interim)
-      }
-    }
-
-    recognition.onerror = (e) => {
-      console.error('Speech recognition error:', e.error)
-      stopRecording()
-    }
-
-    return recognition
-  }
-
-  const startRecording = () => {
-    if (!recognitionRef.current) {
-      recognitionRef.current = initializeRecognition()
-    }
-
-    try {
-      recognitionRef.current.start()
+      mediaRecorder.start()
       setIsRecording(true)
+      setError(null)
     } catch (err) {
-      console.error('Recognition start failed:', err)
+      console.error('Recording start error:', err)
+      setError('Could not start recording')
     }
   }
 
+  // Stop recording
   const stopRecording = () => {
-    try {
-      recognitionRef.current?.stop()
-    } catch (err) {
-      console.error('Recognition stop failed:', err)
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop()
+      setIsRecording(false)
     }
-    setIsRecording(false)
   }
 
+  // Parse proper nouns
+  const parseProperNouns = (inputText) => {
+    const doc = nlp(inputText)
+    const extractedProperNouns = doc.people().out('array')
+      .concat(doc.places().out('array'))
+      .concat(doc.organizations().out('array'))
+      .filter((noun, index, self) => 
+        noun && noun.trim() !== '' && self.indexOf(noun) === index
+      )
+
+    setProperNouns(extractedProperNouns)
+  }
+
+  // Manual text change handler
+  const handleManualChange = (e) => {
+    const newText = e.target.value
+    setText(newText)
+    parseProperNouns(newText)
+  }
+
+  // Copy to clipboard
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(finalText + interimText).then(() => {
+    navigator.clipboard.writeText(text).then(() => {
       console.log('Copied to clipboard')
+    }).catch(err => {
+      console.error('Copy to clipboard failed:', err)
     })
   }
 
-  const handleManualChange = (e) => {
-    setFinalText(e.target.value)
-  }
-
+  // Close overlay
   const closeOverlay = () => {
     const el = document.getElementById('voice-email-react-root')
     if (el) el.remove()
-
-    try {
-      recognitionRef.current?.stop()
-    } catch (err) {
-      console.error('Recognition stop on close failed:', err)
-    }
+    stopRecording()
   }
 
   return (
@@ -112,6 +145,12 @@ const App = () => {
         </IconButton>
       </div>
 
+      {error && (
+        <Typography color="error" style={{ marginBottom: '10px' }}>
+          {error}
+        </Typography>
+      )}
+
       <div style={{ display: 'flex', gap: '10px', margin: '15px 0' }}>
         {!isRecording ? (
           <Button variant="contained" color="success" onClick={startRecording}>
@@ -128,7 +167,7 @@ const App = () => {
         multiline
         fullWidth
         minRows={5}
-        value={finalText + interimText}
+        value={text}
         onChange={handleManualChange}
         placeholder="Speak something..."
       />
