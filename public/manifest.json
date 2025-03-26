@@ -44,6 +44,10 @@
           "https://mail.google.com/*",
           "https://inbox.google.com/*"
         ]
+      },
+      {
+        "resources": ["reactOverlay.bundle.js"],
+        "matches": ["<all_urls>"]
       }
     ]
 }
