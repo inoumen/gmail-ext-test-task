@@ -5,7 +5,7 @@ import {
   Paper, 
   TextField, 
   Typography, 
-  IconButton, 
+  IconButton,
 } from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close'
 import nlp from 'compromise'
@@ -176,6 +176,7 @@ const App = () => {
       <div style={{ display: 'flex', gap: '10px', margin: '15px 0' }}>
         {!isRecording ? (
           <Button 
+            loadingIndicator="Processing..."
             variant="contained" 
             color="success" 
             onClick={startRecording}
