@@ -12,8 +12,8 @@ Voice Email Composer is a Chrome extension that allows users to compose emails u
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/yourusername/voice-email-composer.git
-cd voice-email-composer
+git clone https://github.com/inoumen/gmail-ext-test-task.git
+cd gmail-ext-test-task
 ```
 
 ### 2. Install Dependencies
@@ -35,14 +35,6 @@ npm run build
 
 ## Loading the Extension in Chrome
 
-### Method 1: Development Mode
-1. Open Google Chrome
-2. Navigate to `chrome://extensions/`
-3. Enable "Developer mode" (toggle in the top right)
-4. Click "Load unpacked"
-5. Select the `dist` folder from your project directory
-
-### Method 2: Production Build
 1. Create a production build using `npm run build`
 2. Open Google Chrome
 3. Navigate to `chrome://extensions/`
@@ -52,20 +44,12 @@ npm run build
 
 ## Features
 - Voice-to-text email composition
-- Direct integration with Gmail
 - Easy-to-use voice commands
 
 ## Troubleshooting
 - Ensure microphone permissions are granted
 - Check browser compatibility
 - Verify Chrome extension is enabled
-
-## Contributing
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
 
 ## License
 Distributed under the MIT License. See `LICENSE` for more information.
