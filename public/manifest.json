@@ -6,28 +6,27 @@
     "permissions": [
       "activeTab",
       "storage",
-      "tabs",
-      "https://mail.google.com/*",
-      "https://inbox.google.com/*"
+      "tabs"
     ],
+    "background": {
+      "service_worker": "background.js"
+    },
     "host_permissions": [
       "https://mail.google.com/*",
       "https://inbox.google.com/*"
     ],
-    "optional_permissions": [
-      "microphone"
-    ],
     "action": {
       "default_popup": "index.html",
       "default_icon": {
-        "16": "favicon-16x16.png"
+        "16": "favicon-16x16.png",
+        "48": "android-chrome-192x192.png",
+        "128": "android-chrome-192x192.png"
       }
     },
     "icons": {
-      "16": "favicon-16x16.png"
-    },
-    "background": {
-      "service_worker": "background.js"
+      "16": "favicon-16x16.png",
+      "48": "android-chrome-192x192.png",
+      "128": "android-chrome-192x192.png"
     },
     "content_scripts": [
       {
